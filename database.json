@@ -1,0 +1,24 @@
+{
+	"employees": [
+		{
+			"first-name": "Tomek",
+			"last-name": "Ruszczyk"
+		},
+		{
+			"first-name": "John",
+			"last-name": "Doe"
+		},
+		{
+			"first-name": "Jane",
+			"last-name": "Doe"
+		},
+		{
+			"first-name": "Jan",
+			"last-name": "Kowalski"
+		},
+		{
+			"first-name": "Will",
+			"last-name": "Smith"
+		}
+	]
+}

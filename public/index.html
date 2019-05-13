@@ -1,1 +1,20 @@
-formularz
+<input type="email" id="email" placeholder="Wpisz email, pod który chcesz wysłać listy obecności" style="width: 350px"><br>
+<button id="send">
+	Wyślij
+</button>
+
+<script type="text/javascript">
+	let button = document.getElementById("send");
+	button.addEventListener("click", send);
+	let email = document.getElementById("email");
+	email.addEventListener("keyup", e => {
+		if (e.keyCode != 13) {return;} // enter
+		send();
+	});
+
+	function send() {
+		let email = document.getElementById("email");
+		let url = "send/"+email.value;
+		document.location.href = url;
+	}
+</script>

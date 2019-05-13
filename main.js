@@ -365,6 +365,7 @@ function run(req, res) {
 	generatePdf(() => {
 		sendMail(mail, auth, destination);
 		res.send("Rozpoczęto wysyłanie emaila.");
+		console.log("Rozpoczęto wysyłanie emaila -- "+destination);
 	});
 }
 
@@ -373,11 +374,6 @@ const app = express();
 const port = 80;
 
 app.use(express.static('public'));
-app.get('/send/:destination', (req, res) => run(req, res));//res.send('Hello World wear!')); //
-app.get('/test', (req, res) => res.send('Hello World wear!'));
-app.get('/mail', async function(req, res) {
-	res.send('Hello World wear!');
-	console.log(11);
-	sendMail(mail, auth, 'margaret.quitzon@ethereal.email');
-});
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+app.get('/send/:destination', (req, res) => run(req, res));
+
+app.listen(port, () => console.log(`Narzędzie do generowania list obecności chodzi pod portem ${port}.`));

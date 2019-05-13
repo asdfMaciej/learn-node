@@ -217,7 +217,7 @@ class Header {
 }
 
 class PdfGenerator {
-	constructor(response) {
+	constructor() {
 		let PdfPrinter = require('pdfmake');
 		let fonts = {
 			Roboto: {
@@ -227,7 +227,7 @@ class PdfGenerator {
 				bolditalics: 'fonts/Roboto-MediumItalic.ttf'
 			}
 		};
-		this.response = response;
+
 		this.printer = new PdfPrinter(fonts);
 		this.filename = 'lista-obecnosci.pdf';
 		this.styles = {
@@ -284,12 +284,12 @@ class PdfGenerator {
 		this.document.content.push(document);
 	}
 
-	outputHeaders() {
+	outputHeaders(response) {
 		let filename = this.filename;
-		this.response.setHeader('Content-disposition', `inline; filename="${filename}"`);
-		this.response.setHeader('Content-type', 'application/pdf');
+		response.setHeader('Content-disposition', `inline; filename="${filename}"`);
+		response.setHeader('Content-type', 'application/pdf');
 	}
-	output() {
+	output(response) {
 		this.outputHeaders();
 		let pdf = this.printer.createPdfKitDocument(this.document);
 		let chunks = [];
@@ -300,31 +300,84 @@ class PdfGenerator {
 		});
 		pdf.on('end', () => {
 			result = Buffer.concat(chunks);
-			this.response.send(result);
+			response.send(result);
 		});
 		pdf.end();
 	}
+	outputFile(path, callback=function(){}) {
+		let fs = require('fs');
+		let pdf = this.printer.createPdfKitDocument(this.document);
+		let stream = fs.createWriteStream(path+'/'+this.filename);
+		pdf.pipe(stream);
+		pdf.end();
+
+		stream.on('finish', () => {
+			callback();
+		});
+	}
 }
 
-const express = require('express');
-
-const app = express();
-const port = 3000;
-
-
-function generatePdf(req, res) {	
-	console.log('dddddddd');
-	
+function generatePdf(callback) {	
 	let employees = require('./database.json');
 	let employeesList = employees.employees;
 
-	let gen = new PdfGenerator(res);
+	let gen = new PdfGenerator();
 	gen.generateEmployees(employeesList);
-	gen.output();
+	const nodeMailer = require('nodemailer');
+	gen.outputFile("cache", callback);
 }
 
+function sendMail(mail, auth, destination) {
+	const nodemailer = require("nodemailer");
+
+	let transporter = nodemailer.createTransport({
+		host: mail.host,
+		port: mail.port,
+		secure: mail.secure,
+		auth: auth
+	});
+
+	// send mail with defined transport object
+	transporter.sendMail({
+		from: `"${auth.name}" <${auth.user}>`,
+		to: destination,
+		subject: "Wygenerowane listy obecności.",
+		text: "W załączniku przesyłam listy obecności na bieżący miesiąc.",
+		html: "W załączniku przesyłam listy obecności na bieżący miesiąc.",
+		attachments: [{
+			filename: 'lista-obecnosci.pdf',
+			path: 'cache/lista-obecnosci.pdf' 
+		}]
+	});
+}
+
+function run(req, res) {
+	let destination = req.params.destination;
+	if (destination == null || destination == "") {
+		res.send("Podaj email!");
+		return;
+	}
+	let config = require("./config.json");
+	let mail = config.mail;
+	let auth = config.auth;
+	mail.secure = mail.port == 465;
+
+	generatePdf(() => {
+		sendMail(mail, auth, destination);
+		res.send("Rozpoczęto wysyłanie emaila.");
+	});
+}
+
+const express = require('express');
+const app = express();
+const port = 80;
 
 app.use(express.static('public'));
-app.get('/', (req, res) => generatePdf(req, res));
+app.get('/send/:destination', (req, res) => run(req, res));//res.send('Hello World wear!')); //
 app.get('/test', (req, res) => res.send('Hello World wear!'));
+app.get('/mail', async function(req, res) {
+	res.send('Hello World wear!');
+	console.log(11);
+	sendMail(mail, auth, 'margaret.quitzon@ethereal.email');
+});
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));

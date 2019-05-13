@@ -1,0 +1,12 @@
+{	
+	"mail": {
+		"host": "smtp.ethereal.email",
+		"port": 587
+	},
+
+	"auth": {
+		"user": "margaret.quitzon@ethereal.email",
+		"name": "Margaret Quizton",
+		"pass": "9yMV7uvNQdC8MPtS2d"
+	}
+}

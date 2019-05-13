@@ -1,31 +1,3 @@
-const express = require('express');
-
-const app = express();
-const port = 3000;
-var PdfPrinter = require('pdfmake');
-
-employees = require('./database.json');
-console.log(employees.employees);
-
-function generatePdf(req, res) {
-	console.log('dddddddd');
-	res.send('ok');
-}
-
-Date.prototype.addDays = function(days) {
-    var date = new Date(this.valueOf());
-    date.setDate(date.getDate() + days);
-    return date;
-}
-
-Date.prototype.isSameDay = function(d2) {
-	let d1 = this;
-	return d1.getFullYear() === d2.getFullYear() &&
-		d1.getMonth() === d2.getMonth() &&
-		d1.getDate() === d2.getDate();
-}
-
-
 class Holidays {
 	constructor() {
 		/*
@@ -144,36 +116,93 @@ class Calendar {
 		return new Date(year, month, 0).getDate();
 	}
 }
-let a = new Calendar()
-console.log(a.getMonth())
-/*
-let easterMonth, easterDay; 
-[easterMonth, easterDay] = getEaster(2019);
 
-let date = new Date();
-let currentYear = date.getFullYear();
-let months = ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"]
-let month = months[date.getMonth()]
-let day = date.getDay()
-console.log(month)
-console.log(day)
-var theBigDay = new Date;
-theBigDay.setMonth(easterMonth - 1);
-theBigDay.setDate(easterDay);
-theBigDay.setYear(currentYear);
-console.log(theBigDay);
-*/
-let h = new Holidays()
-console.log(h.holidays)
-console.log(h.isHoliday(4, 21))
-console.log(h.isHoliday(4, 22))
-console.log(h.isHoliday(4, 23))
-console.log(h.isHoliday(4, 24))
-console.log(h.isHoliday(4, 25))
-console.log(h.isHoliday(4, 26))
-console.log(h.isHoliday(4, 27))
-console.log(h.isHoliday(4, 28))
-console.log(h.isHoliday(4, 29))
+class MonthTable {
+	constructor(month) {
+		this.month = month;
+	}
+
+	generate() {
+		let table = {
+			layout: '',
+			table: {
+				headerRows: 1,
+				widths: [
+					'*', 'auto', 'auto', 'auto', 'auto', 'auto'
+				],
+
+				body: [
+					['Dzień', 'Godzina rozpoczęcia', 'Godzina zakończenia',
+					'Razem godzin', 'Podpis', 'Uwagi']
+				]
+			}
+		};
+
+		return table;
+	}
+}
+
+class PdfGenerator {
+	constructor(response) {
+		let PdfPrinter = require('pdfmake');
+		let fonts = {
+			Roboto: {
+				normal: 'fonts/Roboto-Regular.ttf',
+				bold: 'fonts/Roboto-Medium.ttf',
+				italics: 'fonts/Roboto-Italic.ttf',
+				bolditalics: 'fonts/Roboto-MediumItalic.ttf'
+			}
+		};
+		this.response = response;
+		this.printer = new PdfPrinter(fonts);
+		this.filename = 'lista-obecnosci.pdf';
+	}
+
+	outputHeaders() {
+		let filename = this.filename;
+		this.response.setHeader('Content-disposition', `inline; filename="${filename}"`);
+		this.response.setHeader('Content-type', 'application/pdf');
+	}
+	output(document) {
+		this.outputHeaders();
+		let pdf = this.printer.createPdfKitDocument(document);
+		let chunks = [];
+		let result;
+
+		pdf.on('data', chunk => {
+			chunks.push(chunk);
+		});
+		pdf.on('end', () => {
+			result = Buffer.concat(chunks);
+			this.response.send(result);
+		});
+		pdf.end()
+	}
+}
+
+const express = require('express');
+
+const app = express();
+const port = 3000;
+
+employees = require('./database.json');
+console.log(employees.employees);
+
+function generatePdf(req, res) {	
+	console.log('dddddddd');
+
+	var docDefinition = {
+		content: [
+			'First paragraph',
+			'Another paragraph, this time a little bit longer to make sure, this line will be divided into at least two lines'
+		]
+	};
+	
+	let gen = new PdfGenerator(res);
+	gen.output(docDefinition);
+}
+
+
 app.use(express.static('public'));
 app.get('/', (req, res) => generatePdf(req, res));
 app.get('/test', (req, res) => res.send('Hello World wear!'));

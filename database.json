@@ -1,24 +1,24 @@
 {
 	"employees": [
 		{
-			"first-name": "Tomek",
-			"last-name": "Ruszczyk"
+			"firstName": "Tomek",
+			"lastName": "Ruszczyk"
 		},
 		{
-			"first-name": "John",
-			"last-name": "Doe"
+			"firstName": "John",
+			"lastName": "Doe"
 		},
 		{
-			"first-name": "Jane",
-			"last-name": "Doe"
+			"firstName": "Jane",
+			"lastName": "Doe"
 		},
 		{
-			"first-name": "Jan",
-			"last-name": "Kowalski"
+			"firstName": "Jan",
+			"lastName": "Kowalski"
 		},
 		{
-			"first-name": "Will",
-			"last-name": "Smith"
+			"firstName": "Will",
+			"lastName": "Smith"
 		}
 	]
 }

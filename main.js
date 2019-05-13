@@ -123,7 +123,7 @@ class MonthTable {
 		this.month = calendar.getMonth();
 	}
 
-	generate() {
+	generate(pageBreak=false) {
 		let tableWidths = ['auto', '*', '*', '*', '*', '*']
 		let tableHeaders = [
 			'Dzień', 'Godzina rozpoczęcia', 'Godzina zakończenia',
@@ -139,11 +139,13 @@ class MonthTable {
 				emptyCell, emptyCell, emptyCell, emptyCell, emptyCell
 			];
 
-			if (day.isHoliday) {
-				for (let i in dayRow) {
-					dayRow[i].style = 'holiday';
-				}
+			for (let i in dayRow) {
+				dayRow[i].style = ['tableCell'];
+				if (day.isHoliday) {
+					dayRow[i].style.push('holiday');
+				}	
 			}
+			
 			tableBody.push(dayRow);
 		}
 
@@ -153,8 +155,13 @@ class MonthTable {
 				headerRows: 1,
 				widths: tableWidths,
 				body: tableBody
-			}
+			},
+			style: 'calendar'
 		};
+
+		if (pageBreak) {
+			table.pageBreak = 'after';
+		}
 		return [table];
 	}
 }
@@ -181,10 +188,27 @@ class Header {
 		};
 		let information = {
 			columns: [
-				//{width: '*', text: `Imię: ${this.firstName}`},
-				//{width: '*', text: `Nazwisko: ${this.lastName}`},
-				{width: '*', style: 'name', text: `${this.firstName} ${this.lastName}`},
-				{width: '*', style: 'year', text: `${this.month} ’${this.yearSuffix}`}
+				{
+					width: '*', style: 'nameTemplate',
+					text: [
+						'Imię: ',
+						{text: this.firstName, style: 'name'}
+					]
+				},
+				{
+					width: '*', style: 'nameTemplate',
+					text: [
+						'Nazwisko: ',
+						{text: this.lastName, style: 'name'}
+					]
+				},
+				{
+					width: '*', style: 'nameTemplate',
+					text: [
+						'Miesiąc: ',
+						{text: `${this.month} ’${this.yearSuffix}`, style: 'name'}
+					]
+				}
 			],
 			style: 'information'
 		};
@@ -208,28 +232,34 @@ class PdfGenerator {
 		this.filename = 'lista-obecnosci.pdf';
 		this.styles = {
 			holiday: {
-				fillColor: '#D2D2D2'
+				fillColor: '#A6A6A6'
 			},
 
 			header: {
-				fontSize: 22,
+				fontSize: 24,
 				alignment: 'center',
-				margin: 8
+				margin: 16
 			},
 
 			name: {
-				alignment: 'left',
 				bold: true,
-				fontSize: 12
+				fontSize: 14
 			},
 
-			year: {
-				fontSize: 16,
-				alignment: 'right'
+			nameTemplate: {
+				bold: true,
+				fontSize: 8
+			},
+
+			tableCell: {
+				alignment: 'center'
 			},
 
 			information: {
-				margin: [1, 8, 1, 4]
+				margin: [24, 8, 24, 4]
+			},
+			calendar: {
+				margin: [8, 0, 8, 0]
 			}
 		}
 		this.document = {
@@ -239,10 +269,18 @@ class PdfGenerator {
 	}
 
 	generateEmployees(employees) {
-		let table = new MonthTable().generate();
-		let header = new Header("Maciej", "Kaszkowiak").generate();
+		let document = [];
+		for (let employeeIndex in employees) {
+			let employee = employees[employeeIndex];
+			let firstName = employee.firstName;
+			let lastName = employee.lastName;
 
-		let document = [header, table];
+			let lastEmployee = employeeIndex == employees.length - 1;
+			let pageBreak = !lastEmployee;		
+			let table = new MonthTable().generate(pageBreak);
+			let header = new Header(firstName, lastName).generate();
+			document.push([header, table]);
+		}
 		this.document.content.push(document);
 	}
 

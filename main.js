@@ -118,27 +118,77 @@ class Calendar {
 }
 
 class MonthTable {
-	constructor(month) {
-		this.month = month;
+	constructor() {
+		let calendar = new Calendar();
+		this.month = calendar.getMonth();
 	}
 
 	generate() {
+		let tableWidths = ['auto', '*', '*', '*', '*', '*']
+		let tableHeaders = [
+			'Dzień', 'Godzina rozpoczęcia', 'Godzina zakończenia',
+			'Razem godzin', 'Podpis', 'Uwagi'
+		];
+		let tableBody = [tableHeaders];
+
+
+		for (let day of this.month) {
+			let emptyCell = {text: ''};
+			let dayRow = [
+				{text: day.day}, 
+				emptyCell, emptyCell, emptyCell, emptyCell, emptyCell
+			];
+
+			if (day.isHoliday) {
+				for (let i in dayRow) {
+					dayRow[i].style = 'holiday';
+				}
+			}
+			tableBody.push(dayRow);
+		}
+
 		let table = {
 			layout: '',
 			table: {
 				headerRows: 1,
-				widths: [
-					'*', 'auto', 'auto', 'auto', 'auto', 'auto'
-				],
-
-				body: [
-					['Dzień', 'Godzina rozpoczęcia', 'Godzina zakończenia',
-					'Razem godzin', 'Podpis', 'Uwagi']
-				]
+				widths: tableWidths,
+				body: tableBody
 			}
 		};
+		return [table];
+	}
+}
 
-		return table;
+class Header {
+	constructor(firstName, lastName) {
+		let date = new Date();
+		let months = [
+			"Styczeń", "Luty", "Marzec", "Kwiecień", 
+			"Maj", "Czerwiec", "Lipiec", "Sierpień", 
+			"Wrzesień", "Październik", "Listopad", "Grudzień"
+		];
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.year = date.getFullYear();
+		this.yearSuffix = this.year.toString().slice(-2); // 2018 -> 18
+		this.month = months[date.getMonth()].toLowerCase();
+	}
+
+	generate() {
+		let textTop = {
+			text: 'LISTA OBECNOŚCI',
+			style: 'header'
+		};
+		let information = {
+			columns: [
+				//{width: '*', text: `Imię: ${this.firstName}`},
+				//{width: '*', text: `Nazwisko: ${this.lastName}`},
+				{width: '*', style: 'name', text: `${this.firstName} ${this.lastName}`},
+				{width: '*', style: 'year', text: `${this.month} ’${this.yearSuffix}`}
+			],
+			style: 'information'
+		};
+		return [textTop, information];
 	}
 }
 
@@ -156,6 +206,44 @@ class PdfGenerator {
 		this.response = response;
 		this.printer = new PdfPrinter(fonts);
 		this.filename = 'lista-obecnosci.pdf';
+		this.styles = {
+			holiday: {
+				fillColor: '#D2D2D2'
+			},
+
+			header: {
+				fontSize: 22,
+				alignment: 'center',
+				margin: 8
+			},
+
+			name: {
+				alignment: 'left',
+				bold: true,
+				fontSize: 12
+			},
+
+			year: {
+				fontSize: 16,
+				alignment: 'right'
+			},
+
+			information: {
+				margin: [1, 8, 1, 4]
+			}
+		}
+		this.document = {
+			content: [],
+			styles: this.styles
+		};
+	}
+
+	generateEmployees(employees) {
+		let table = new MonthTable().generate();
+		let header = new Header("Maciej", "Kaszkowiak").generate();
+
+		let document = [header, table];
+		this.document.content.push(document);
 	}
 
 	outputHeaders() {
@@ -163,9 +251,9 @@ class PdfGenerator {
 		this.response.setHeader('Content-disposition', `inline; filename="${filename}"`);
 		this.response.setHeader('Content-type', 'application/pdf');
 	}
-	output(document) {
+	output() {
 		this.outputHeaders();
-		let pdf = this.printer.createPdfKitDocument(document);
+		let pdf = this.printer.createPdfKitDocument(this.document);
 		let chunks = [];
 		let result;
 
@@ -176,7 +264,7 @@ class PdfGenerator {
 			result = Buffer.concat(chunks);
 			this.response.send(result);
 		});
-		pdf.end()
+		pdf.end();
 	}
 }
 
@@ -185,21 +273,16 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
-employees = require('./database.json');
-console.log(employees.employees);
 
 function generatePdf(req, res) {	
 	console.log('dddddddd');
-
-	var docDefinition = {
-		content: [
-			'First paragraph',
-			'Another paragraph, this time a little bit longer to make sure, this line will be divided into at least two lines'
-		]
-	};
 	
+	let employees = require('./database.json');
+	let employeesList = employees.employees;
+
 	let gen = new PdfGenerator(res);
-	gen.output(docDefinition);
+	gen.generateEmployees(employeesList);
+	gen.output();
 }
 
 

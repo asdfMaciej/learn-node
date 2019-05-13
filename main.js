@@ -25,6 +25,7 @@ Date.prototype.isSameDay = function(d2) {
 		d1.getDate() === d2.getDate();
 }
 
+
 class Holidays {
 	constructor() {
 		/*
@@ -36,16 +37,10 @@ class Holidays {
 			[1, 1],
 			[1, 6],
 			[3, 1],
-			[3, 24],
-			[4, 14],
 			[5, 1],
 			[5, 3],
-			[5, 8],
-			[7, 12],
-			[8, 1],
 			[8, 15],
-			[8, 31],
-			[10, 19],
+			[11, 1],
 			[11, 11],
 			[12, 25],
 			[12, 26]
@@ -118,6 +113,39 @@ class Holidays {
 		return new Date(year, month-1, day);
 	}
 }
+
+class Calendar {
+	constructor() {
+		this.holidays = new Holidays();
+		let date = new Date();
+		this.year = date.getFullYear();
+		this.month = date.getMonth() + 1;
+	}
+
+	getMonth() {
+		let daysList = [];
+		let daysAmount = this.daysInMonth(this.year, this.month);
+		for (let day = 1; day <= daysAmount; day++) {
+			let dayObject = {
+				day: day,
+				month: this.month,
+				year: this.year,
+				isHoliday: this.holidays.isHoliday(this.month, day)
+			};
+			daysList.push(dayObject);
+		}
+
+		return daysList;
+	}
+
+	daysInMonth(year, month) {
+		// month is 0-indexed, so it returns 0th day of the next month, 
+		// hence last day of specified month alas the amount of them
+		return new Date(year, month, 0).getDate();
+	}
+}
+let a = new Calendar()
+console.log(a.getMonth())
 /*
 let easterMonth, easterDay; 
 [easterMonth, easterDay] = getEaster(2019);
